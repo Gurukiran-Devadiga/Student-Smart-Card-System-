@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Smart Card System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border-md: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #5c5c58;
+    --text3: #9a9a94;
+    --blue: #185FA5; --blue-lt: #E6F1FB; --blue-dk: #0C447C;
+    --green: #3B6D11; --green-lt: #EAF3DE; --green-dk: #27500A;
+    --red: #A32D2D; --red-lt: #FCEBEB; --red-dk: #791F1F;
+    --amber: #854F0B; --amber-lt: #FAEEDA; --amber-dk: #633806;
+    --teal: #0F6E56; --teal-lt: #E1F5EE;
+    --r: 10px; --r-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+  
+  /* Layout */
+  #app { display: flex; min-height: 100vh; }
+  #sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  #main { flex: 1; overflow-y: auto; }
+  
+  /* Sidebar */
+  .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+  .logo-badge { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 34px; height: 34px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+  .logo-text { font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--text); }
+  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; }
+  .sidebar-section { padding: 12px 10px 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; margin: 1px 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.12s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--blue-lt); color: var(--blue-dk); font-weight: 500; }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 12px 10px; border-top: 1px solid var(--border); }
+  .role-badge { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--surface2); }
+  .role-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .role-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .role-label { font-size: 10px; color: var(--text3); }
+  .role-toggle { margin-left: auto; font-size: 11px; color: var(--blue); cursor: pointer; font-weight: 500; }
+  
+  /* Page */
+  .page { display: none; padding: 28px; max-width: 1100px; }
+  .page.active { display: block; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .page-title { font-size: 22px; font-weight: 600; color: var(--text); }
+  .page-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  
+  /* Cards & grids */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-val { font-size: 26px; font-weight: 600; margin-top: 4px; color: var(--text); }
+  .stat-icon { font-size: 20px; margin-bottom: 8px; }
+  
+  /* Buttons */
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; font-weight: 500; transition: all 0.12s; border: 1px solid var(--border-md); background: var(--surface); color: var(--text); }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue-dk); }
+  .btn-primary:hover { background: var(--blue-dk); }
+  .btn-success { background: var(--green); color: #fff; border-color: var(--green-dk); }
+  .btn-success:hover { background: var(--green-dk); }
+  .btn-danger { background: var(--red); color: #fff; border-color: var(--red-dk); }
+  .btn-danger:hover { background: var(--red-dk); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+  .badge-active { background: var(--green-lt); color: var(--green-dk); }
+  .badge-blocked { background: var(--red-lt); color: var(--red-dk); }
+  .badge-pending { background: var(--amber-lt); color: var(--amber-dk); }
+  .badge-info { background: var(--blue-lt); color: var(--blue-dk); }
+  
+  /* Forms */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-md); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--surface); outline: none; transition: border 0.12s; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--blue); }
+  .form-section { margin-bottom: 20px; }
+  .form-section-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); border-bottom: 1px solid var(--border); background: var(--surface2); }
+  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child td { border-bottom: none; }
+  
+  /* Avatar */
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .student-row { display: flex; align-items: center; gap: 10px; }
+  
+  /* QR Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; padding: 28px; max-width: 380px; width: 90%; box-shadow: var(--shadow-md); }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+  .qr-wrap { display: flex; justify-content: center; padding: 16px; background: var(--bg); border-radius: 12px; margin-bottom: 16px; }
+  #qr-canvas canvas, #qr-canvas img { border-radius: 4px; }
+  .qr-student-info { text-align: center; margin-bottom: 16px; }
+  .qr-name { font-size: 15px; font-weight: 600; }
+  .qr-id { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .modal-actions { display: flex; gap: 8px; }
+  
+  /* Scan simulator */
+  .scan-area { border: 2px dashed var(--border-md); border-radius: 14px; padding: 28px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: all 0.15s; }
+  .scan-area:hover { border-color: var(--blue); background: var(--blue-lt); }
+  .scan-icon { font-size: 40px; margin-bottom: 10px; }
+  .scan-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .scan-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  
+  /* Student card visual */
+  .smart-card { border-radius: 16px; padding: 22px; color: #fff; position: relative; overflow: hidden; margin-bottom: 0; }
+  .smart-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .smart-card::after { content: ''; position: absolute; bottom: -20px; left: 40px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+  .sc-chip { width: 32px; height: 24px; background: rgba(255,255,255,0.25); border-radius: 4px; margin-bottom: 14px; display: grid; place-items: center; font-size: 9px; color: rgba(255,255,255,0.7); font-family: 'DM Mono'; }
+  .sc-name { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; }
+  .sc-id { font-size: 11px; opacity: 0.7; font-family: 'DM Mono'; margin-top: 2px; }
+  .sc-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; }
+  .sc-bal-label { font-size: 10px; opacity: 0.65; }
+  .sc-bal { font-size: 22px; font-weight: 600; }
+  .sc-dept { font-size: 10px; opacity: 0.7; }
+  
+  /* Transaction list */
+  .tx-list { display: flex; flex-direction: column; gap: 1px; }
+  .tx-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; }
+  .tx-item:hover { background: var(--surface2); }
+  .tx-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .tx-info { flex: 1; }
+  .tx-desc { font-size: 13px; font-weight: 500; color: var(--text); }
+  .tx-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .tx-amt { font-size: 14px; font-weight: 600; }
+  .tx-debit { color: var(--red); }
+  .tx-credit { color: var(--green); }
+  
+  /* Alert */
+  .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .alert.show { display: block; }
+  .alert-success { background: var(--green-lt); color: var(--green-dk); border: 1px solid #c0dd97; }
+  .alert-error { background: var(--red-lt); color: var(--red-dk); border: 1px solid #f09595; }
+  .alert-info { background: var(--blue-lt); color: var(--blue-dk); border: 1px solid #85b7eb; }
+  
+  /* Attendance */
+  .att-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+  .att-day { width: 100%; aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+  .att-present { background: var(--green-lt); color: var(--green-dk); }
+  .att-absent { background: var(--red-lt); color: var(--red-dk); }
+  .att-today { background: var(--blue); color: #fff; }
+  .att-future { background: var(--surface2); color: var(--text3); }
+  
+  /* Library */
+  .book-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; }
+  .book-spine { width: 10px; border-radius: 3px; align-self: stretch; flex-shrink: 0; }
+  .book-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .book-author { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .book-meta { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--surface2); border-radius: 10px; padding: 3px; }
+  .tab { flex: 1; text-align: center; padding: 7px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text3); font-weight: 500; transition: all 0.12s; }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+  
+  /* Settings */
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-info .setting-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .setting-info .setting-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .toggle { position: relative; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 22px; cursor: pointer; transition: 0.2s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+  .toggle input:checked + .toggle-slider { background: var(--blue); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
+  
+  /* Admin guard */
+  .admin-only { display: none; }
+  body.admin .admin-only { display: flex; }
+  body.admin .admin-nav { display: flex; }
+  .admin-nav { display: none; }
+  .admin-lock { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--amber); background: var(--amber-lt); padding: 4px 10px; border-radius: 6px; }
+  
+  /* Responsive QR scan result */
+  .scan-result { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; display: none; }
+  .scan-result.show { display: block; }
+  
+  /* Print QR */
+  @media print {
+    #sidebar, .btn, .modal-overlay { display: none !important; }
+    .smart-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">
+        <div class="logo-icon">🎓</div>
+        <div>
+          <div class="logo-text">Campus<br>SmartCard</div>
+          <div class="logo-sub">v2.0 · 2025</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sidebar-section">Student</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">⊞</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('my-card')">
+      <span class="nav-icon">◉</span> My Card & QR
+    </div>
+    <div class="nav-item" onclick="showPage('attendance')">
+      <span class="nav-icon">✓</span> Attendance
+    </div>
+    <div class="nav-item" onclick="showPage('wallet')">
+      <span class="nav-icon">◈</span> Wallet & Pay
+    </div>
+    <div class="nav-item" onclick="showPage('library')">
+      <span class="nav-icon">◫</span> Library
+    </div>
+    
+    <div class="sidebar-section admin-nav" style="display:none;">Admin</div>
+    <div class="nav-item admin-nav admin-only" onclick="showPage('admin-students')" style="display:none;">
+      <span class="nav-icon">◎</span> All Students
+    </div>
+    <div class="nav-item admin-nav admin-only" onclick="showPage('admin-scan')" style="display:none;">
+      <span class="nav-icon">⊡</span> QR Scanner
+    </div>
+    <div class="nav-item admin-nav admin-only" onclick="showPage('admin-reports')" style="display:none;">
+      <span class="nav-icon">≡</span> Reports
+    </div>
+    <div class="nav-item admin-nav admin-only" onclick="showPage('admin-settings')" style="display:none;">
+      <span class="nav-icon">⚙</span> Settings
+    </div>
+    
+    <div class="sidebar-bottom">
+      <div class="role-badge">
+        <div class="role-dot" id="role-dot" style="background:#3B6D11;"></div>
+        <div>
+          <div class="role-name" id="role-name">Student View</div>
+          <div class="role-label" id="role-label">Arjun Mehta · STU001</div>
+        </div>
+        <span class="role-toggle" onclick="toggleRole()">Switch</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="main">
+    
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Good morning, Arjun 👋</div>
+          <div class="page-sub">Tuesday, 6 May 2025 · Your campus overview</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showQR('STU001')">Show My QR</button>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-label">Attendance</div>
+          <div class="stat-val" style="color:var(--green);">86%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">₹</div>
+          <div class="stat-label">Wallet balance</div>
+          <div class="stat-val">₹850</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-label">Books issued</div>
+          <div class="stat-val">2</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔔</div>
+          <div class="stat-label">Alerts</div>
+          <div class="stat-val" style="color:var(--amber);">1</div>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px;">Recent transactions</div>
+          <div class="tx-list" id="dash-tx"></div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px;">Quick actions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="btn" style="padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;" onclick="showPage('wallet')">
+              <span style="font-size:22px;">💳</span><span style="font-size:12px;">Pay at canteen</span>
+            </button>
+            <button class="btn" style="padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;" onclick="showPage('library')">
+              <span style="font-size:22px;">📖</span><span style="font-size:12px;">Borrow book</span>
+            </button>
+            <button class="btn" style="padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;" onclick="showPage('attendance')">
+              <span style="font-size:22px;">✅</span><span style="font-size:12px;">My attendance</span>
+            </button>
+            <button class="btn" style="padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;" onclick="showPage('my-card')">
+              <span style="font-size:22px;">🪪</span><span style="font-size:12px;">View card</span>
+            </button>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:var(--amber-lt);border-radius:8px;border:1px solid #fac775;">
+            <div style="font-size:12px;font-weight:600;color:var(--amber-dk);">⚠ Low balance alert</div>
+            <div style="font-size:11px;color:var(--amber);margin-top:2px;">Recharge your wallet before canteen hours</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- MY CARD & QR -->
+    <div id="page-my-card" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Smart Card</div>
+          <div class="page-sub">Your digital identity on campus</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div id="student-physical-card" style="margin-bottom:16px;"></div>
+          <div class="card" style="margin-top:0;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Card details</div>
+            <table style="width:100%;font-size:13px;">
+              <tr><td style="color:var(--text3);padding:5px 0;">Student ID</td><td style="font-family:'DM Mono';font-weight:500;">STU001</td></tr>
+              <tr><td style="color:var(--text3);padding:5px 0;">Department</td><td>Computer Science</td></tr>
+              <tr><td style="color:var(--text3);padding:5px 0;">Year</td><td>3rd Year</td></tr>
+              <tr><td style="color:var(--text3);padding:5px 0;">Batch</td><td>2022–2026</td></tr>
+              <tr><td style="color:var(--text3);padding:5px 0;">Status</td><td><span class="badge badge-active">● Active</span></td></tr>
+              <tr><td style="color:var(--text3);padding:5px 0;">Card issued</td><td>01 Jun 2022</td></tr>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="text-align:center;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:16px;">Your QR code</div>
+            <div style="background:var(--bg);border-radius:12px;padding:20px;display:inline-block;margin-bottom:14px;">
+              <div id="my-qr-display"></div>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Scan this at any campus terminal</div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="window.print()">Print card</button>
+              <button class="btn btn-sm" onclick="showQR('STU001')">Full screen QR</button>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px;">QR code is valid for</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+              <div style="padding:10px;background:var(--blue-lt);border-radius:8px;">
+                <div style="font-size:18px;">🏫</div>
+                <div style="font-size:11px;color:var(--blue-dk);margin-top:4px;font-weight:500;">Attendance</div>
+              </div>
+              <div style="padding:10px;background:var(--green-lt);border-radius:8px;">
+                <div style="font-size:18px;">🍽️</div>
+                <div style="font-size:11px;color:var(--green-dk);margin-top:4px;font-weight:500;">Canteen</div>
+              </div>
+              <div style="padding:10px;background:var(--amber-lt);border-radius:8px;">
+                <div style="font-size:18px;">📚</div>
+                <div style="font-size:11px;color:var(--amber-dk);margin-top:4px;font-weight:500;">Library</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ATTENDANCE -->
+    <div id="page-attendance" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Attendance</div>
+          <div class="page-sub">Marked via QR scan at class entry</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="markAttendanceNow()">Mark now (simulate scan)</button>
+      </div>
+      <div id="att-alert" class="alert"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:600;">May 2025</div>
+            <div style="display:flex;gap:12px;font-size:11px;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span>Present</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--red-lt);border:1px solid var(--red);display:inline-block;"></span>Absent</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--blue);display:inline-block;"></span>Today</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px;">
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">M</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">T</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">W</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">T</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">F</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">S</div>
+            <div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;">S</div>
+          </div>
+          <div id="att-calendar" class="att-grid"></div>
+        </div>
+        <div>
+          <div class="stat-card" style="margin-bottom:12px;">
+            <div class="stat-label">Overall attendance</div>
+            <div class="stat-val" style="color:var(--green);" id="att-percent">86%</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="att-count">19/22 classes</div>
+          </div>
+          <div class="card" style="margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:10px;">Subject-wise</div>
+            <div id="subj-att"></div>
+          </div>
+          <div class="card">
+            <div style="font-size:12px;font-weight:600;margin-bottom:10px;">Recent scans</div>
+            <div id="recent-scans"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- WALLET -->
+    <div id="page-wallet" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Campus Wallet</div>
+          <div class="page-sub">Pay anywhere with QR — canteen, stationery, events</div>
+        </div>
+      </div>
+      
+      <div id="wallet-alert" class="alert"></div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:12px;color:var(--text3);">Available balance</div>
+          <div style="font-size:36px;font-weight:600;color:var(--text);" id="wallet-balance-display">₹850</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-success btn-sm" onclick="openRecharge()">+ Add money</button>
+            <button class="btn btn-sm" onclick="showQR('STU001')">Show pay QR</button>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Simulate payment</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Scan at</label>
+            <select id="pay-location">
+              <option value="Canteen">Canteen</option>
+              <option value="Stationery shop">Stationery shop</option>
+              <option value="Photocopier">Photocopier</option>
+              <option value="Cafeteria">Cafeteria</option>
+              <option value="Sports desk">Sports desk</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Amount (₹)</label>
+            <input type="number" id="pay-amount" placeholder="e.g. 60" min="1">
+          </div>
+          <button class="btn btn-primary" onclick="simulatePay()">Simulate QR scan & pay</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:600;">Transaction history</div>
+          <select id="tx-filter" onchange="renderTxList()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-md);background:var(--surface);">
+            <option value="all">All</option>
+            <option value="debit">Debits</option>
+            <option value="credit">Credits</option>
+          </select>
+        </div>
+        <div class="tx-list" id="wallet-tx-list"></div>
+      </div>
+    </div>
+    
+    <!-- LIBRARY -->
+    <div id="page-library" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Library</div>
+          <div class="page-sub">Borrow & return with QR code scan</div>
+        </div>
+      </div>
+      <div id="lib-alert" class="alert"></div>
+      
+      <div class="tabs">
+        <div class="tab active" onclick="libTab('issued',this)">Issued books</div>
+        <div class="tab" onclick="libTab('browse',this)">Browse catalog</div>
+        <div class="tab" onclick="libTab('history',this)">History</div>
+      </div>
+      
+      <div id="lib-issued"></div>
+      <div id="lib-browse" style="display:none;"></div>
+      <div id="lib-history" style="display:none;"></div>
+    </div>
+    
+    <!-- ADMIN: ALL STUDENTS -->
+    <div id="page-admin-students" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Student management</div>
+          <div class="page-sub">Admin · Full control over all student records</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAddStudent()">+ Add student</button>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total students</div><div class="stat-val" id="a-total">4</div></div>
+        <div class="stat-card"><div class="stat-label">Active cards</div><div class="stat-val" id="a-active">3</div></div>
+        <div class="stat-card"><div class="stat-label">Blocked cards</div><div class="stat-val" id="a-blocked" style="color:var(--red);">1</div></div>
+        <div class="stat-card"><div class="stat-label">Total funds</div><div class="stat-val" id="a-funds">₹2,350</div></div>
+      </div>
+      
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <input type="text" id="student-search" placeholder="Search by name, ID, dept..." oninput="renderStudentTable()" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-md);font-size:13px;font-family:'DM Sans';">
+          <select id="dept-filter" onchange="renderStudentTable()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border-md);font-size:13px;font-family:'DM Sans';">
+            <option value="">All departments</option>
+            <option>Computer Science</option>
+            <option>Electronics</option>
+            <option>Mechanical</option>
+            <option>Civil</option>
+            <option>Mathematics</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>ID</th>
+                <th>Department</th>
+                <th>Year</th>
+                <th>Balance</th>
+                <th>Attendance</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="student-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ADMIN: QR SCANNER -->
+    <div id="page-admin-scan" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">QR scanner terminal</div>
+          <div class="page-sub">Admin · Simulate campus scanner stations</div>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:14px;">Scanner type</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+              <button class="btn" id="scan-btn-att" onclick="setScanMode('attendance')" style="padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="font-size:22px;">🏫</span><span style="font-size:12px;">Attendance</span>
+              </button>
+              <button class="btn" id="scan-btn-pay" onclick="setScanMode('payment')" style="padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="font-size:22px;">💳</span><span style="font-size:12px;">Payment</span>
+              </button>
+              <button class="btn" id="scan-btn-lib" onclick="setScanMode('library')" style="padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="font-size:22px;">📚</span><span style="font-size:12px;">Library</span>
+              </button>
+              <button class="btn" id="scan-btn-id" onclick="setScanMode('identity')" style="padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="font-size:22px;">🔍</span><span style="font-size:12px;">Identity check</span>
+              </button>
+            </div>
+            <div id="scan-mode-label" style="text-align:center;font-size:12px;color:var(--text3);margin-bottom:14px;">Select a scanner mode above</div>
+            
+            <div id="scan-form-area"></div>
+            
+            <div class="scan-area" onclick="triggerScan()" id="scan-area-btn" style="display:none;">
+              <div class="scan-icon">⬛</div>
+              <div class="scan-title">Simulate QR scan</div>
+              <div class="scan-sub" id="scan-area-sub">Click to scan student QR code</div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div id="scan-result" class="scan-result"></div>
+          <div class="card" style="margin-top:16px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Scanner log</div>
+            <div id="scan-log" class="tx-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ADMIN: REPORTS -->
+    <div id="page-admin-reports" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Reports & analytics</div>
+          <div class="page-sub">Admin · Campus-wide statistics</div>
+        </div>
+        <button class="btn btn-sm" onclick="window.print()">Export / Print</button>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">QR scans today</div><div class="stat-val">47</div></div>
+        <div class="stat-card"><div class="stat-label">Canteen revenue</div><div class="stat-val">₹4,820</div></div>
+        <div class="stat-card"><div class="stat-label">Books borrowed</div><div class="stat-val">12</div></div>
+        <div class="stat-card"><div class="stat-label">Avg attendance</div><div class="stat-val" style="color:var(--green);">82%</div></div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px;">Attendance by department</div>
+          <div id="dept-report"></div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px;">Campus spending (today)</div>
+          <div id="spend-report"></div>
+        </div>
+      </div>
+      
+      <div class="card" style="margin-top:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px;">All transactions — today</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Student</th><th>Type</th><th>Location</th><th>Amount</th><th>Status</th></tr>
+            </thead>
+            <tbody id="report-tx-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ADMIN: SETTINGS -->
+    <div id="page-admin-settings" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">System settings</div>
+          <div class="page-sub">Admin · Configure campus smart card system</div>
+        </div>
+      </div>
+      
+      <div id="settings-alert" class="alert"></div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="form-section-title">Wallet settings</div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Daily spending limit</div>
+                <div class="setting-desc">Max amount a student can spend per day</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:13px;color:var(--text3);">₹</span>
+                <input type="number" id="daily-limit" value="500" style="width:70px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Minimum balance alert</div>
+                <div class="setting-desc">Alert when balance falls below</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:13px;color:var(--text3);">₹</span>
+                <input type="number" id="min-balance" value="100" style="width:70px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Canteen payments</div>
+                <div class="setting-desc">Enable QR payments at canteen</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked id="t-canteen"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Auto block on low balance</div>
+                <div class="setting-desc">Block card if balance is ₹0</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="t-autoblock"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="form-section-title">Library settings</div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Max books per student</div>
+                <div class="setting-desc">Borrowing limit at one time</div>
+              </div>
+              <input type="number" id="max-books" value="3" style="width:55px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Loan period (days)</div>
+                <div class="setting-desc">Days before return is due</div>
+              </div>
+              <input type="number" id="loan-days" value="14" style="width:55px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Fine per day (₹)</div>
+                <div class="setting-desc">Overdue fine charged via wallet</div>
+              </div>
+              <input type="number" id="fine-day" value="5" style="width:55px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="form-section-title">Attendance settings</div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Minimum attendance %</div>
+                <div class="setting-desc">Alert if student falls below</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <input type="number" id="min-att" value="75" style="width:55px;padding:6px;border-radius:6px;border:1px solid var(--border-md);font-size:13px;text-align:center;">
+                <span style="font-size:13px;color:var(--text3);">%</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">Auto attendance via QR</div>
+                <div class="setting-desc">Mark present on QR scan</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked id="t-att"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">SMS alerts to parents</div>
+                <div class="setting-desc">Notify on absence</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="t-sms"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+          
+          <div class="card" style="margin-bottom:16px;">
+            <div class="form-section-title">Bulk operations</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-sm" onclick="bulkAction('topup')">Top-up all wallets by ₹100</button>
+              <button class="btn btn-sm btn-danger" onclick="bulkAction('block')">Block all inactive accounts</button>
+              <button class="btn btn-sm" onclick="bulkAction('report')">Generate monthly PDF report</button>
+              <button class="btn btn-sm" onclick="bulkAction('reset')">Reset all QR codes</button>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="form-section-title">Save settings</div>
+            <button class="btn btn-primary" onclick="saveSettings()">Save all settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div><!-- end main -->
+</div><!-- end app -->
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <div class="modal-title" id="qr-modal-name">Arjun Mehta</div>
+    <div class="modal-sub" id="qr-modal-sub">STU001 · Computer Science · 3rd Year</div>
+    <div class="qr-wrap">
+      <div id="qr-canvas"></div>
+    </div>
+    <div class="qr-student-info">
+      <div class="qr-name" id="qr-display-name">Arjun Mehta</div>
+      <div class="qr-id" id="qr-display-id">STU001</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1;" onclick="closeModal()">Done</button>
+      <button class="btn" onclick="window.print()">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-overlay" id="add-student-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Register new student</div>
+    <div class="modal-sub">Issue a smart card for a new student</div>
+    <div id="add-alert" class="alert" style="margin-bottom:12px;"></div>
+    <div class="form-grid" style="margin-bottom:12px;">
+      <div class="form-group"><label>Full name</label><input id="add-name" placeholder="e.g. Priya Sharma"></div>
+      <div class="form-group"><label>Student ID</label><input id="add-id" placeholder="e.g. STU005"></div>
+      <div class="form-group"><label>Department</label>
+        <select id="add-dept"><option>Computer Science</option><option>Electronics</option><option>Mechanical</option><option>Civil</option><option>Mathematics</option></select>
+      </div>
+      <div class="form-group"><label>Year</label>
+        <select id="add-year"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+      </div>
+      <div class="form-group"><label>Initial balance (₹)</label><input id="add-balance" type="number" value="500"></div>
+      <div class="form-group"><label>Card color</label>
+        <select id="add-color">
+          <option value="#185FA5">Blue</option>
+          <option value="#3B6D11">Green</option>
+          <option value="#993556">Pink</option>
+          <option value="#534AB7">Purple</option>
+          <option value="#0F6E56">Teal</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addStudent()">Issue smart card</button>
+      <button class="btn" onclick="closeAddStudent()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recharge Modal -->
+<div class="modal-overlay" id="recharge-modal">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-title">Add money to wallet</div>
+    <div class="modal-sub">Admin-approved top-up for Arjun Mehta</div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Amount (₹)</label>
+      <input type="number" id="recharge-amount" placeholder="Enter amount" min="1">
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
+      <button class="btn btn-sm" onclick="setRecharge(100)">₹100</button>
+      <button class="btn btn-sm" onclick="setRecharge(200)">₹200</button>
+      <button class="btn btn-sm" onclick="setRecharge(500)">₹500</button>
+      <button class="btn btn-sm" onclick="setRecharge(1000)">₹1000</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="doRecharge()">Add money</button>
+      <button class="btn" onclick="document.getElementById('recharge-modal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= DATA ========= */
+let isAdmin = false;
+let students = [
+  {id:'STU001',name:'Arjun Mehta',dept:'Computer Science',year:'3rd Year',balance:850,active:true,color:'#185FA5',attendance:86,booksIssued:2},
+  {id:'STU002',name:'Divya Nair',dept:'Electronics',year:'2nd Year',balance:620,active:true,color:'#3B6D11',attendance:91,booksIssued:1},
+  {id:'STU003',name:'Rahul Patel',dept:'Mechanical',year:'1st Year',balance:430,active:false,color:'#993556',attendance:72,booksIssued:0},
+  {id:'STU004',name:'Sneha Rao',dept:'Mathematics',year:'4th Year',balance:450,active:true,color:'#534AB7',attendance:88,booksIssued:3},
+];
+
+let transactions = [
+  {id:'T001',sid:'STU001',type:'debit',amount:80,desc:'Canteen',location:'Canteen',time:'Today 10:45'},
+  {id:'T002',sid:'STU001',type:'debit',amount:30,desc:'Photocopy',location:'Photocopier',time:'Today 09:10'},
+  {id:'T003',sid:'STU001',type:'credit',amount:500,desc:'Wallet top-up',location:'Admin',time:'Yesterday'},
+  {id:'T004',sid:'STU001',type:'debit',amount:150,desc:'Library fine',location:'Library',time:'3 May'},
+  {id:'T005',sid:'STU002',type:'debit',amount:60,desc:'Canteen',location:'Canteen',time:'Today 11:00'},
+  {id:'T006',sid:'STU003',type:'credit',amount:200,desc:'Top-up',location:'Admin',time:'Yesterday'},
+  {id:'T007',sid:'STU004',type:'debit',amount:90,desc:'Cafeteria',location:'Cafeteria',time:'Today 12:30'},
+];
+
+let attendanceData = {
+  STU001: [1,1,0,1,1,0,0,1,1,1,1,0,1,0,0,1,1,1,0,1,1,0,0,1,1,1,1,1,0,0,1]
+};
+
+let issuedBooks = [
+  {id:'B001',title:'Introduction to Algorithms',author:'Cormen et al.',isbn:'978-0262033848',issued:'22 Apr 2025',due:'6 May 2025',color:'#185FA5',overdue:true},
+  {id:'B002',title:'Clean Code',author:'Robert C. Martin',isbn:'978-0132350884',issued:'28 Apr 2025',due:'12 May 2025',color:'#3B6D11',overdue:false},
+];
+
+let bookCatalog = [
+  {id:'B003',title:'Design Patterns',author:'Gang of Four',isbn:'978-0201633610',available:true,color:'#534AB7'},
+  {id:'B004',title:'The Pragmatic Programmer',author:'Hunt & Thomas',isbn:'978-0135957059',available:true,color:'#854F0B'},
+  {id:'B005',title:'Computer Networks',author:'Andrew Tanenbaum',isbn:'978-0132126953',available:false,color:'#0F6E56'},
+  {id:'B006',title:'Operating System Concepts',author:'Silberschatz',isbn:'978-1119800361',available:true,color:'#993556'},
+];
+
+let libHistory = [
+  {title:'Data Structures & Algorithms',issued:'1 Mar 2025',returned:'15 Mar 2025'},
+  {title:'Python Programming',issued:'10 Feb 2025',returned:'24 Feb 2025'},
+];
+
+let scanLog = [];
+let scanMode = null;
+let attPresent = 19, attTotal = 22;
+
+/* ========= UTILS ========= */
+function initials(name){ return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function showAlert(id, msg, type, duration=3000){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.className = 'alert alert-'+type+' show';
+  el.textContent = msg;
+  if(duration) setTimeout(()=>{ el.className='alert'; el.textContent=''; }, duration);
+}
+function fmtMoney(n){ return '₹'+n.toLocaleString(); }
+
+/* ========= NAV ========= */
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const page = document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  event && event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.add('active');
+  if(id==='my-card') renderMyCard();
+  if(id==='attendance') renderAttendance();
+  if(id==='wallet') renderTxList();
+  if(id==='library') renderLibrary();
+  if(id==='admin-students') { renderStudentTable(); updateAdminStats(); }
+  if(id==='admin-scan') renderScanLog();
+  if(id==='admin-reports') renderReports();
+  if(id==='dashboard') renderDashTx();
+}
+
+function toggleRole(){
+  isAdmin = !isAdmin;
+  document.body.classList.toggle('admin', isAdmin);
+  document.getElementById('role-name').textContent = isAdmin ? 'Admin View' : 'Student View';
+  document.getElementById('role-label').textContent = isAdmin ? 'Administrator · Full access' : 'Arjun Mehta · STU001';
+  document.getElementById('role-dot').style.background = isAdmin ? '#A32D2D' : '#3B6D11';
+  document.querySelectorAll('.admin-nav').forEach(el=>{
+    el.style.display = isAdmin ? 'flex' : 'none';
+  });
+}
+
+/* ========= QR MODAL ========= */
+function showQR(sid){
+  const s = students.find(x=>x.id===sid) || students[0];
+  document.getElementById('qr-modal-name').textContent = s.name;
+  document.getElementById('qr-modal-sub').textContent = s.id+' · '+s.dept+' · '+s.year;
+  document.getElementById('qr-display-name').textContent = s.name;
+  document.getElementById('qr-display-id').textContent = s.id;
+  document.getElementById('qr-canvas').innerHTML = '';
+  new QRCode(document.getElementById('qr-canvas'), {
+    text: JSON.stringify({id:s.id,name:s.name,dept:s.dept,ts:Date.now()}),
+    width:180, height:180,
+    colorDark:'#1a1a18', colorLight:'#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('qr-modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('qr-modal').classList.remove('open'); }
+
+/* ========= DASHBOARD ========= */
+function renderDashTx(){
+  const el = document.getElementById('dash-tx');
+  if(!el) return;
+  const myTx = transactions.filter(t=>t.sid==='STU001').slice(0,4);
+  el.innerHTML = myTx.map(t=>`
+    <div class="tx-item">
+      <div class="tx-dot" style="background:${t.type==='debit'?'#FCEBEB':'#EAF3DE'};">
+        ${t.type==='debit'?'↑':'↓'}
+      </div>
+      <div class="tx-info">
+        <div class="tx-desc">${t.desc}</div>
+        <div class="tx-meta">${t.location} · ${t.time}</div>
+      </div>
+      <div class="tx-amt tx-${t.type}">${t.type==='debit'?'-':'+'}${fmtMoney(t.amount)}</div>
+    </div>`).join('');
+}
+
+/* ========= MY CARD ========= */
+function renderMyCard(){
+  const s = students[0];
+  const cardEl = document.getElementById('student-physical-card');
+  cardEl.innerHTML = `
+    <div class="smart-card" style="background:${s.color};">
+      <div class="sc-chip">CHIP</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-id">${s.id}</div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-bal-label">Balance</div>
+          <div class="sc-bal">${fmtMoney(s.balance)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="sc-dept">${s.dept}</div>
+          <div class="sc-dept">${s.year}</div>
+        </div>
+      </div>
+    </div>`;
+  const qrEl = document.getElementById('my-qr-display');
+  qrEl.innerHTML = '';
+  new QRCode(qrEl, {
+    text: JSON.stringify({id:s.id,name:s.name,dept:s.dept}),
+    width:140, height:140,
+    colorDark:'#1a1a18', colorLight:'#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+/* ========= ATTENDANCE ========= */
+function renderAttendance(){
+  const data = attendanceData['STU001'] || [];
+  const cal = document.getElementById('att-calendar');
+  const days = ['','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',''];
+  // May 2025 starts on Thursday (day 4), offset 3 blanks for Mon-start grid
+  const offset = 3;
+  let html = '';
+  for(let i=0;i<offset;i++) html+=`<div class="att-day att-future"></div>`;
+  for(let d=0;d<31;d++){
+    const day = d+1;
+    const isToday = day===6;
+    const isWeekend = ((d+offset)%7===5)||((d+offset)%7===6);
+    let cls = 'att-future';
+    if(isToday) cls='att-today';
+    else if(day>6) cls='att-future';
+    else if(isWeekend) cls='att-future';
+    else if(data[d]===1) cls='att-present';
+    else if(data[d]===0) cls='att-absent';
+    html+=`<div class="att-day ${cls}">${day}</div>`;
+  }
+  cal.innerHTML = html;
+  document.getElementById('att-percent').textContent = Math.round(attPresent/attTotal*100)+'%';
+  document.getElementById('att-count').textContent = attPresent+'/'+attTotal+' classes';
+  
+  document.getElementById('subj-att').innerHTML = [
+    {sub:'Data Structures',pct:90,color:'#185FA5'},
+    {sub:'OS',pct:85,color:'#3B6D11'},
+    {sub:'DBMS',pct:78,color:'#854F0B'},
+    {sub:'Networks',pct:88,color:'#534AB7'},
+  ].map(s=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+        <span style="color:var(--text);">${s.sub}</span>
+        <span style="font-weight:500;color:${s.pct>=75?'var(--green)':'var(--red)'};">${s.pct}%</span>
+      </div>
+      <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${s.pct}%;background:${s.color};border-radius:3px;"></div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('recent-scans').innerHTML = [
+    {time:'06 May 09:00',subj:'Data Structures'},
+    {time:'05 May 10:00',subj:'DBMS'},
+    {time:'04 May 09:00',subj:'Networks'},
+  ].map(s=>`
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="color:var(--text);">● ${s.subj}</span>
+      <span style="color:var(--text3);">${s.time}</span>
+    </div>`).join('');
+}
+
+function markAttendanceNow(){
+  attPresent++; attTotal++;
+  const data = attendanceData['STU001'];
+  data[5] = 1;
+  showAlert('att-alert','✓ Attendance marked via QR scan — Data Structures (09:00)','success');
+  renderAttendance();
+  scanLog.unshift({time:new Date().toLocaleTimeString(),sid:'STU001',name:'Arjun Mehta',mode:'Attendance',result:'Present'});
+}
+
+/* ========= WALLET ========= */
+function renderTxList(){
+  const filter = document.getElementById('tx-filter')?.value || 'all';
+  const myTx = transactions.filter(t=>t.sid==='STU001' && (filter==='all'||t.type===filter));
+  document.getElementById('wallet-tx-list').innerHTML = myTx.length ? myTx.map(t=>`
+    <div class="tx-item">
+      <div class="tx-dot" style="background:${t.type==='debit'?'#FCEBEB':'#EAF3DE'}; font-size:14px;">
+        ${t.type==='debit'?'↑':'↓'}
+      </div>
+      <div class="tx-info">
+        <div class="tx-desc">${t.desc}</div>
+        <div class="tx-meta">${t.location} · ${t.time}</div>
+      </div>
+      <div class="tx-amt tx-${t.type}">${t.type==='debit'?'-':'+'}${fmtMoney(t.amount)}</div>
+    </div>`).join('') : '<div style="color:var(--text3);font-size:13px;padding:14px 0;">No transactions found.</div>';
+  document.getElementById('wallet-balance-display').textContent = fmtMoney(students[0].balance);
+}
+
+function simulatePay(){
+  const loc = document.getElementById('pay-location').value;
+  const amt = parseInt(document.getElementById('pay-amount').value)||0;
+  if(amt<=0){ showAlert('wallet-alert','Enter a valid amount.','error'); return; }
+  if(!students[0].active){ showAlert('wallet-alert','Your card is blocked. Contact admin.','error'); return; }
+  if(students[0].balance < amt){ showAlert('wallet-alert','Insufficient balance! Please recharge.','error'); return; }
+  students[0].balance -= amt;
+  const tx = {id:'T'+Date.now(),sid:'STU001',type:'debit',amount:amt,desc:loc+' purchase',location:loc,time:'Today '+new Date().toLocaleTimeString().slice(0,5)};
+  transactions.unshift(tx);
+  scanLog.unshift({time:new Date().toLocaleTimeString(),sid:'STU001',name:'Arjun Mehta',mode:'Payment',result:'-'+fmtMoney(amt)+' @ '+loc});
+  showAlert('wallet-alert','✓ Payment of '+fmtMoney(amt)+' at '+loc+' successful!','success');
+  document.getElementById('pay-amount').value='';
+  renderTxList();
+}
+
+function openRecharge(){ document.getElementById('recharge-modal').classList.add('open'); }
+function setRecharge(amt){ document.getElementById('recharge-amount').value=amt; }
+function doRecharge(){
+  const amt = parseInt(document.getElementById('recharge-amount').value)||0;
+  if(amt<=0){ showAlert('wallet-alert','Enter valid amount.','error'); return; }
+  students[0].balance += amt;
+  transactions.unshift({id:'T'+Date.now(),sid:'STU001',type:'credit',amount:amt,desc:'Wallet top-up',location:'Admin',time:'Today '+new Date().toLocaleTimeString().slice(0,5)});
+  document.getElementById('recharge-modal').classList.remove('open');
+  showAlert('wallet-alert','✓ '+fmtMoney(amt)+' added to your wallet!','success');
+  renderTxList();
+}
+
+/* ========= LIBRARY ========= */
+function libTab(tab, el){
+  document.querySelectorAll('#page-library .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['issued','browse','history'].forEach(t=>document.getElementById('lib-'+t).style.display='none');
+  document.getElementById('lib-'+tab).style.display='block';
+}
+
+function renderLibrary(){
+  document.getElementById('lib-issued').innerHTML = issuedBooks.length ? issuedBooks.map(b=>`
+    <div class="book-card" style="margin-bottom:10px;">
+      <div class="book-spine" style="background:${b.color};"></div>
+      <div style="flex:1;">
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+        <div class="book-meta">
+          <span class="badge ${b.overdue?'badge-pending':'badge-info'}">${b.overdue?'⚠ Overdue':'Due '+b.due}</span>
+          <span style="font-size:11px;color:var(--text3);">ISBN: ${b.isbn}</span>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn btn-sm" onclick="returnBook('${b.id}')">Return via QR</button>
+          <button class="btn btn-sm" onclick="renewBook('${b.id}')">Renew</button>
+        </div>
+      </div>
+    </div>`).join('') : '<div style="color:var(--text3);font-size:13px;padding:14px;">No books issued.</div>';
+
+  document.getElementById('lib-browse').innerHTML = `
+    <input type="text" placeholder="Search catalog..." oninput="filterCatalog(this.value)" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border-md);font-size:13px;font-family:'DM Sans';margin-bottom:14px;background:var(--surface);color:var(--text);">
+    <div id="catalog-list">` + bookCatalog.map(b=>`
+    <div class="book-card" style="margin-bottom:10px;" data-title="${b.title.toLowerCase()}">
+      <div class="book-spine" style="background:${b.color};"></div>
+      <div style="flex:1;">
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+        <div class="book-meta">
+          <span class="badge ${b.available?'badge-active':'badge-blocked'}">${b.available?'Available':'Borrowed'}</span>
+          <span style="font-size:11px;color:var(--text3);">ISBN: ${b.isbn}</span>
+        </div>
+        ${b.available?`<button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="borrowBook('${b.id}')">Borrow via QR</button>`:''}
+      </div>
+    </div>`).join('')+'</div>';
+
+  document.getElementById('lib-history').innerHTML = libHistory.map(h=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${h.title}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Issued: ${h.issued}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge badge-active">Returned</span>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">${h.returned}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterCatalog(q){
+  document.querySelectorAll('#catalog-list .book-card').forEach(el=>{
+    el.style.display = el.dataset.title.includes(q.toLowerCase())?'flex':'none';
+  });
+}
+
+function borrowBook(bid){
+  const book = bookCatalog.find(b=>b.id===bid);
+  if(!book||!book.available) return;
+  book.available = false;
+  const due = new Date(); due.setDate(due.getDate()+14);
+  issuedBooks.push({id:bid,title:book.title,author:book.author,isbn:book.isbn,issued:'Today',due:due.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),color:book.color,overdue:false});
+  scanLog.unshift({time:new Date().toLocaleTimeString(),sid:'STU001',name:'Arjun Mehta',mode:'Library',result:'Borrowed: '+book.title});
+  showAlert('lib-alert','✓ "'+book.title+'" borrowed via QR scan! Due in 14 days.','success');
+  renderLibrary();
+}
+
+function returnBook(bid){
+  const idx = issuedBooks.findIndex(b=>b.id===bid);
+  if(idx<0) return;
+  const book = issuedBooks.splice(idx,1)[0];
+  libHistory.unshift({title:book.title,issued:book.issued,returned:'Today'});
+  const cat = bookCatalog.find(b=>b.id===bid);
+  if(cat) cat.available = true;
+  scanLog.unshift({time:new Date().toLocaleTimeString(),sid:'STU001',name:'Arjun Mehta',mode:'Library',result:'Returned: '+book.title});
+  showAlert('lib-alert','✓ "'+book.title+'" returned via QR scan! Thank you.','success');
+  renderLibrary();
+}
+
+function renewBook(bid){
+  const book = issuedBooks.find(b=>b.id===bid);
+  if(!book) return;
+  const due = new Date(); due.setDate(due.getDate()+14);
+  book.due = due.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  book.overdue = false;
+  showAlert('lib-alert','✓ "'+book.title+'" renewed! New due date: '+book.due,'success');
+  renderLibrary();
+}
+
+/* ========= ADMIN: STUDENTS ========= */
+function updateAdminStats(){
+  document.getElementById('a-total').textContent = students.length;
+  document.getElementById('a-active').textContent = students.filter(s=>s.active).length;
+  document.getElementById('a-blocked').textContent = students.filter(s=>!s.active).length;
+  document.getElementById('a-funds').textContent = fmtMoney(students.reduce((a,s)=>a+s.balance,0));
+}
+
+function renderStudentTable(){
+  const q = (document.getElementById('student-search')?.value||'').toLowerCase();
+  const dept = document.getElementById('dept-filter')?.value||'';
+  const filtered = students.filter(s=>(s.name.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)||s.dept.toLowerCase().includes(q))&&(!dept||s.dept===dept));
+  document.getElementById('student-table-body').innerHTML = filtered.map(s=>`
+    <tr>
+      <td>
+        <div class="student-row">
+          <div class="avatar" style="background:${s.color}22;color:${s.color};">${initials(s.name)}</div>
+          <div>
+            <div style="font-weight:500;">${s.name}</div>
+            <div style="font-size:11px;color:var(--text3);">${s.year}</div>
+          </div>
+        </div>
+      </td>
+      <td><span style="font-family:'DM Mono';font-size:12px;">${s.id}</span></td>
+      <td>${s.dept}</td>
+      <td>${s.year}</td>
+      <td style="font-weight:500;">${fmtMoney(s.balance)}</td>
+      <td><span style="color:${s.attendance>=75?'var(--green)':'var(--red)'};">${s.attendance}%</span></td>
+      <td><span class="badge ${s.active?'badge-active':'badge-blocked'}">${s.active?'Active':'Blocked'}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" onclick="showQR('${s.id}')">QR</button>
+          <button class="btn btn-sm ${s.active?'btn-danger':'btn-success'}" onclick="toggleCard('${s.id}')">${s.active?'Block':'Unblock'}</button>
+          <button class="btn btn-sm" onclick="adminTopup('${s.id}')">+₹100</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  updateAdminStats();
+}
+
+function toggleCard(sid){
+  const s = students.find(x=>x.id===sid);
+  if(s){ s.active=!s.active; renderStudentTable(); }
+}
+
+function adminTopup(sid){
+  const s = students.find(x=>x.id===sid);
+  if(!s) return;
+  s.balance += 100;
+  transactions.unshift({id:'T'+Date.now(),sid,type:'credit',amount:100,desc:'Admin top-up',location:'Admin',time:'Today '+new Date().toLocaleTimeString().slice(0,5)});
+  renderStudentTable();
+}
+
+function openAddStudent(){ document.getElementById('add-student-modal').classList.add('open'); }
+function closeAddStudent(){ document.getElementById('add-student-modal').classList.remove('open'); }
+
+function addStudent(){
+  const name=document.getElementById('add-name').value.trim();
+  const id=document.getElementById('add-id').value.trim().toUpperCase();
+  const dept=document.getElementById('add-dept').value;
+  const year=document.getElementById('add-year').value;
+  const balance=parseInt(document.getElementById('add-balance').value)||0;
+  const color=document.getElementById('add-color').value;
+  const alertEl=document.getElementById('add-alert');
+  if(!name||!id){ alertEl.className='alert alert-error show'; alertEl.textContent='Please fill name and student ID.'; return; }
+  if(students.find(s=>s.id===id)){ alertEl.className='alert alert-error show'; alertEl.textContent='Student ID already exists.'; return; }
+  students.push({id,name,dept,year,balance,active:true,color,attendance:0,booksIssued:0});
+  closeAddStudent();
+  renderStudentTable();
+}
+
+/* ========= ADMIN: SCANNER ========= */
+function setScanMode(mode){
+  scanMode = mode;
+  document.querySelectorAll('[id^="scan-btn-"]').forEach(b=>b.style.background='');
+  document.getElementById('scan-btn-'+{attendance:'att',payment:'pay',library:'lib',identity:'id'}[mode]).style.background='var(--blue-lt)';
+  document.getElementById('scan-mode-label').textContent = 'Mode: '+{attendance:'Attendance marking',payment:'Campus payment',library:'Library access',identity:'Identity verification'}[mode];
+  document.getElementById('scan-area-btn').style.display='block';
+  const formArea = document.getElementById('scan-form-area');
+  if(mode==='payment'){
+    formArea.innerHTML=`
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Student ID to scan</label>
+        <select id="scan-student-sel">${students.map(s=>`<option value="${s.id}">${s.name} (${s.id})</option>`).join('')}</select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Amount (₹)</label>
+        <input type="number" id="scan-pay-amt" placeholder="Enter amount">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Location</label>
+        <select id="scan-pay-loc"><option>Canteen</option><option>Cafeteria</option><option>Stationery</option><option>Sports desk</option></select>
+      </div>`;
+  } else {
+    formArea.innerHTML=`
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Student to scan</label>
+        <select id="scan-student-sel">${students.map(s=>`<option value="${s.id}">${s.name} (${s.id})</option>`).join('')}</select>
+      </div>`;
+  }
+  document.getElementById('scan-area-sub').textContent = 'Click to scan student QR — '+mode+' mode';
+}
+
+function triggerScan(){
+  if(!scanMode){ alert('Please select a scanner mode first.'); return; }
+  const sel = document.getElementById('scan-student-sel');
+  const sid = sel ? sel.value : 'STU001';
+  const s = students.find(x=>x.id===sid);
+  if(!s){ return; }
+  const resultEl = document.getElementById('scan-result');
+  resultEl.classList.add('show');
+  
+  if(scanMode==='attendance'){
+    scanLog.unshift({time:new Date().toLocaleTimeString(),sid:s.id,name:s.name,mode:'Attendance',result:'Present ✓'});
+    resultEl.innerHTML=`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div class="avatar" style="width:48px;height:48px;font-size:16px;background:${s.color}22;color:${s.color};">${initials(s.name)}</div>
+        <div><div style="font-size:16px;font-weight:600;">${s.name}</div><div style="font-size:12px;color:var(--text3);">${s.id} · ${s.dept}</div></div>
+        <span class="badge badge-active" style="margin-left:auto;">✓ Attendance marked</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);">Time: ${new Date().toLocaleTimeString()} · ${new Date().toLocaleDateString()}</div>`;
+  } else if(scanMode==='payment'){
+    const amt = parseInt(document.getElementById('scan-pay-amt')?.value)||0;
+    const loc = document.getElementById('scan-pay-loc')?.value||'Canteen';
+    if(!s.active){ resultEl.innerHTML=`<div class="alert alert-error show" style="margin:0;">Card blocked! Cannot process payment for ${s.name}.</div>`; return; }
+    if(s.balance<amt){ resultEl.innerHTML=`<div class="alert alert-error show" style="margin:0;">Insufficient balance! ${s.name} has only ${fmtMoney(s.balance)}.</div>`; return; }
+    s.balance-=amt;
+    transactions.unshift({id:'T'+Date.now(),sid,type:'debit',amount:amt,desc:loc+' purchase',location:loc,time:'Today '+new Date().toLocaleTimeString().slice(0,5)});
+    scanLog.unshift({time:new Date().toLocaleTimeString(),sid:s.id,name:s.name,mode:'Payment',result:`-${fmtMoney(amt)} @ ${loc}`});
+    resultEl.innerHTML=`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div class="avatar" style="width:48px;height:48px;font-size:16px;background:${s.color}22;color:${s.color};">${initials(s.name)}</div>
+        <div><div style="font-size:16px;font-weight:600;">${s.name}</div><div style="font-size:12px;color:var(--text3);">${s.id}</div></div>
+        <span class="badge badge-active" style="margin-left:auto;">✓ Payment done</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:10px;background:var(--surface2);border-radius:8px;">
+        <span>Amount deducted</span><strong>-${fmtMoney(amt)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;">
+        <span style="color:var(--text3);">Remaining balance</span><strong>${fmtMoney(s.balance)}</strong>
+      </div>`;
+  } else if(scanMode==='library'){
+    scanLog.unshift({time:new Date().toLocaleTimeString(),sid:s.id,name:s.name,mode:'Library',result:'Access granted ✓'});
+    const issued = issuedBooks.filter(b=>true).length;
+    resultEl.innerHTML=`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div class="avatar" style="width:48px;height:48px;font-size:16px;background:${s.color}22;color:${s.color};">${initials(s.name)}</div>
+        <div><div style="font-size:16px;font-weight:600;">${s.name}</div><div style="font-size:12px;color:var(--text3);">${s.id}</div></div>
+        <span class="badge badge-active" style="margin-left:auto;">✓ Library access</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);">Books issued: ${s.booksIssued} · Attendance: ${s.attendance}%</div>`;
+  } else if(scanMode==='identity'){
+    scanLog.unshift({time:new Date().toLocaleTimeString(),sid:s.id,name:s.name,mode:'Identity',result:'Verified ✓'});
+    resultEl.innerHTML=`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div class="avatar" style="width:48px;height:48px;font-size:16px;background:${s.color}22;color:${s.color};">${initials(s.name)}</div>
+        <div><div style="font-size:16px;font-weight:600;">${s.name}</div><div style="font-size:12px;color:var(--text3);">${s.id} · ${s.dept}</div></div>
+        <span class="badge ${s.active?'badge-active':'badge-blocked'}" style="margin-left:auto;">${s.active?'✓ Verified':'✗ Blocked'}</span>
+      </div>
+      <table style="width:100%;font-size:12px;">
+        <tr><td style="color:var(--text3);padding:4px 0;">Year</td><td style="font-weight:500;">${s.year}</td></tr>
+        <tr><td style="color:var(--text3);padding:4px 0;">Balance</td><td style="font-weight:500;">${fmtMoney(s.balance)}</td></tr>
+        <tr><td style="color:var(--text3);padding:4px 0;">Attendance</td><td style="font-weight:500;color:${s.attendance>=75?'var(--green)':'var(--red)'};">${s.attendance}%</td></tr>
+      </table>`;
+  }
+  renderScanLog();
+}
+
+function renderScanLog(){
+  const el = document.getElementById('scan-log');
+  if(!el) return;
+  el.innerHTML = scanLog.slice(0,8).map(l=>`
+    <div class="tx-item">
+      <div class="tx-dot" style="background:var(--surface2);font-size:12px;color:var(--text3);">⊡</div>
+      <div class="tx-info">
+        <div class="tx-desc">${l.name} — ${l.mode}</div>
+        <div class="tx-meta">${l.result} · ${l.time}</div>
+      </div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--text3);padding:10px;">No scans yet.</div>';
+}
+
+/* ========= REPORTS ========= */
+function renderReports(){
+  document.getElementById('dept-report').innerHTML = [
+    {dept:'Computer Science',pct:86},
+    {dept:'Electronics',pct:91},
+    {dept:'Mechanical',pct:72},
+    {dept:'Mathematics',pct:88},
+    {dept:'Civil',pct:79},
+  ].map(d=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+        <span>${d.dept}</span>
+        <span style="font-weight:500;color:${d.pct>=75?'var(--green)':'var(--red)'};">${d.pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${d.pct}%;background:${d.pct>=75?'#3B6D11':'#A32D2D'};border-radius:3px;"></div>
+      </div>
+    </div>`).join('');
+  
+  document.getElementById('spend-report').innerHTML = [
+    {loc:'Canteen',amt:2840,color:'#185FA5'},
+    {loc:'Cafeteria',amt:1020,color:'#3B6D11'},
+    {loc:'Stationery',amt:560,color:'#854F0B'},
+    {loc:'Photocopier',amt:400,color:'#534AB7'},
+  ].map(d=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0;"></div>
+      <div style="flex:1;font-size:12px;">${d.loc}</div>
+      <div style="font-size:12px;font-weight:500;">${fmtMoney(d.amt)}</div>
+      <div style="width:80px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${Math.round(d.amt/2840*100)}%;background:${d.color};"></div>
+      </div>
+    </div>`).join('');
+  
+  document.getElementById('report-tx-body').innerHTML = transactions.slice(0,10).map(t=>{
+    const s=students.find(x=>x.id===t.sid);
+    return `<tr>
+      <td style="font-size:12px;color:var(--text3);">${t.time}</td>
+      <td><div style="font-weight:500;font-size:13px;">${s?s.name:t.sid}</div></td>
+      <td><span class="badge ${t.type==='debit'?'badge-blocked':'badge-active'}">${t.type}</span></td>
+      <td>${t.location}</td>
+      <td style="font-weight:500;">${t.type==='debit'?'-':'+'}${fmtMoney(t.amount)}</td>
+      <td><span class="badge badge-active">Success</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ========= SETTINGS ========= */
+function saveSettings(){
+  showAlert('settings-alert','✓ Settings saved successfully! Changes applied across all campus terminals.','success',4000);
+}
+
+function bulkAction(action){
+  const msgs = {
+    topup:'✓ All student wallets topped up by ₹100.',
+    block:'✓ Blocked all inactive accounts (1 blocked).',
+    report:'✓ Monthly report generated and sent to admin email.',
+    reset:'✓ All QR codes have been regenerated. Students notified.'
+  };
+  showAlert('settings-alert', msgs[action]||'Done.','success',4000);
+  if(action==='topup') students.forEach(s=>{if(s.active)s.balance+=100;});
+}
+
+/* ========= INIT ========= */
+renderDashTx();
+</script>
+</body>
+</html>
